@@ -25,9 +25,15 @@ def CFR(history, player, time, pi_1, pi_2):
     elif chance_node(history):
         #this may be the wrong thing to do
         overall_val = 0
+        num_available_actions = len(get_available_actions(history))
         for a in get_available_actions(history):
-            overall_val += CFR(history+a, player, time, 0.1*pi_1, 0.1*pi_2)
-        return overall_val / len(get_available_actions(history))
+            # Barak: We divide both pi_1 and pi_2 by 10 because, since neither is able
+            # to 'affect'/'choose' the outcome of a chance node, the 'counterfactual'
+            # probs are the same as the real probs?
+
+            # for our problem there are always 10 choices where this happens.
+            overall_val += CFR(history+a, player, time, pi_1 / num_available_actions, pi_2 / num_available_actions)
+        return overall_val / num_available_actions
 
     I = get_information_set(history)
     available_actions = get_available_actions(I)
@@ -91,7 +97,7 @@ def solve_CFR(T):
             final_profile[I][a] = average([profiles[t][I][a] for t in range(T)])
     return final_profile
 
-T = 20
+T = 40
 filename = "stored_CFR_solution_{0}.txt"
 final_profile = solve_CFR(T)
 f = open(filename.format(T),'w')
