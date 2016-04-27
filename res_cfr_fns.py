@@ -93,11 +93,6 @@ def get_available_actions(I):
         return SPY_ALLOCATIONS
     # if it's a spy strategy
     if I[0] in SPY_ALLOCATIONS:
-        # check to see if passing would cause us to lose (if so, we should always fail)
-        # or if failing would cause us to win (if so, we should always fail)
-        if I.count(FAIL) == NUM_FAILS-1 or I.count(PASS) == NUM_PASSES-1:
-            return [FAIL]
-        # check to see if a spy is part of the mission (if not, the only result is pass)
         current_round = get_current_round(I)
         if current_round == 0:
             #first mission proposed is always A
@@ -106,8 +101,14 @@ def get_available_actions(I):
             mission = I[-1]
         alloc = I[0]
         assert mission in MISSIONS
+        # check to see if a spy is part of the mission (if not, the only result is pass)
         if spy_on_mission(mission, alloc, THREE_PERSON_ROUNDS[current_round]):
-            return MISSION_RESULTS
+            # check to see if passing would cause us to lose (if so, we should always fail)
+            # or if failing would cause us to win (if so, we should always fail)
+            if I.count(FAIL) == NUM_FAILS-1 or I.count(PASS) == NUM_PASSES-1:
+                return [FAIL]
+            else:
+                return [PASS, FAIL]
         else:
             return [PASS]
     else:
