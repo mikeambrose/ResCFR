@@ -23,8 +23,11 @@ def CFR(history, player, time, pi_1, pi_2):
         return get_utility(history, player)
 
     elif chance_node(history):
-        a = evaluate_chance_node(history)
-        return CFR(history+a, player, time, pi_1, pi_2)
+        #this may be the wrong thing to do
+        overall_val = 0
+        for a in get_available_actions(history):
+            overall_val += CFR(history+a, player, time, 0.1*pi_1, 0.1*pi_2)
+        return overall_val / len(get_available_actions(history))
 
     I = get_information_set(history)
     available_actions = get_available_actions(I)
@@ -54,10 +57,12 @@ def CFR(history, player, time, pi_1, pi_2):
 def update_profile(I):
     """Finds new strategy profile based on global regrets and information set I"""
     available_actions = get_available_actions(I)
-    sum_cfr = sum(regret[I][a] for a in available_actions)
-    if sum_cfr == 0:
-        return {a:1.0/len(available_actions) for a in available_actions}
-    return {a:regret[I][a]/sum_cfr for a in available_actions}
+    sum_cfr = sum(max(regret[I][a],0) for a in available_actions)
+    if sum_cfr <= 0:
+        new_I_profile = {a:1.0/len(available_actions) for a in available_actions}
+    else:
+        new_I_profile = {a:max((regret[I][a]/sum_cfr),0) for a in available_actions}
+    return new_I_profile
 
 def setup_CFR(T):
     """Initializes global variables"""
@@ -74,9 +79,22 @@ def setup_CFR(T):
 def solve_CFR(T):
     """Runs CFR for T iterations"""
     setup_CFR(T)
-    for t in range(T):
+    for t in range(T+1):
         for i in [P1, P2]:
             val_root_node = CFR("",i,t,1,1)
         print "Iteration {0} with value at root {1}".format(t, val_root_node)
+    average = lambda x: sum(x) / len(x)
+    final_profile = {}
+    for I in profiles[1]:
+        final_profile[I] = {}
+        for a in profiles[1][I]:
+            final_profile[I][a] = average([profiles[t][I][a] for t in range(T)])
+    return final_profile
 
-solve_CFR(1000)
+T = 20
+filename = "stored_CFR_solution_{0}.txt"
+final_profile = solve_CFR(T)
+f = open(filename.format(T),'w')
+import json
+s = json.dumps(final_profile)
+f.write(s)

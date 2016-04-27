@@ -6,11 +6,11 @@ for pos,letter in zip(itertools.combinations(range(NUM_PLAYERS),2),MISSIONS):
     letter_to_pos[letter] = set(pos)
 
 #TODO: probably should be memoized
-def spy_on_mission(mission, alloc, two_person_mission):
+def spy_on_mission(mission, alloc, three_person_mission):
     """Returns true if spy allocation ALLOC leads to a spy on mission MISSION"""
     mission_people = letter_to_pos[mission]
     spy_people = letter_to_pos[alloc.upper()]
-    if not two_person_mission:
+    if three_person_mission:
         mission_people = set(range(NUM_PLAYERS)) - mission_people
     return len(mission_people & spy_people) != 0
 

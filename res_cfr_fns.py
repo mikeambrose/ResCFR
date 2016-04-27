@@ -89,6 +89,8 @@ def get_available_actions(I):
     in an instant loss"""
     if terminal(I):
         return []
+    if I == "":
+        return SPY_ALLOCATIONS
     # if it's a spy strategy
     if I[0] in SPY_ALLOCATIONS:
         # check to see if passing would cause us to lose (if so, we should always fail)
