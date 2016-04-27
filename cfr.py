@@ -3,13 +3,15 @@ http://modelai.gettysburg.edu/2013/cfr/cfr.pdf"""
 from __future__ import division
 
 from res_cfr_fns import terminal, get_utility, get_information_set, get_information_sets,\
-                           get_next_player, chance_node, get_available_actions 
+                           get_next_player, chance_node, get_available_actions, evaluate_chance_node
 
 #map of information set : regret
 regret = {}
 #list of strategy profiles for each time step
 profiles = []
 #all spy allocations
+P1 = 0
+P2 = 1
 
 def CFR(history, player, time, pi_1, pi_2):
     """Runs CFR on a node with history HISTORY
@@ -18,7 +20,7 @@ def CFR(history, player, time, pi_1, pi_2):
     where PI_1 and PI_2 are the probabilities of players playing to get to this history
     """
     if terminal(history):
-        return get_utility(history)
+        return get_utility(history, player)
 
     elif chance_node(history):
         a = evaluate_chance_node(history)
@@ -31,21 +33,21 @@ def CFR(history, player, time, pi_1, pi_2):
     next_player = get_next_player(history)
 
     for a in available_actions:
-        if next_player == RES:
-            v_strat_a[a] = CFR(history+a, player, time, profiles[t][I][a]*pi_1, pi_2)
+        if next_player == P1:
+            v_strat_a[a] = CFR(history+a, player, time, profiles[time][I][a]*pi_1, pi_2)
         else:
-            v_strat_a[a] = CFR(history+a, player, time, pi_1, profiles[t][I][a]*pi_2)
-        v_strat = v_strat+profiles[t][I][a]*v_strat_a[a]
+            v_strat_a[a] = CFR(history+a, player, time, pi_1, profiles[time][I][a]*pi_2)
+        v_strat = v_strat+profiles[time][I][a]*v_strat_a[a]
 
     if next_player == player:
         for a in available_actions:
-            if player == RES:
+            if player == P1:
                 pi_excl_i, pi_i = pi_2, pi_1
             else:
                 pi_excl_i, pi_i = pi_1, pi_2
             regret[I][a] = regret[I][a] + pi_excl_i*(v_strat_a[a]-v_strat)
             #cumulative strategy tables?
-        profile[t+1][I] = update_profile(I)
+        profiles[time+1][I] = update_profile(I)
 
     return v_strat
 
@@ -53,6 +55,8 @@ def update_profile(I):
     """Finds new strategy profile based on global regrets and information set I"""
     available_actions = get_available_actions(I)
     sum_cfr = sum(regret[I][a] for a in available_actions)
+    if sum_cfr == 0:
+        return {a:1.0/len(available_actions) for a in available_actions}
     return {a:regret[I][a]/sum_cfr for a in available_actions}
 
 def setup_CFR(T):
@@ -70,9 +74,9 @@ def setup_CFR(T):
 def solve_CFR(T):
     """Runs CFR for T iterations"""
     setup_CFR(T)
-    for t in range(1,T+1):
-        for i in range(2):
+    for t in range(T):
+        for i in [P1, P2]:
             val_root_node = CFR("",i,t,1,1)
-            print val_root_node
+        print "Iteration {0} with value at root {1}".format(t, val_root_node)
 
 solve_CFR(1000)

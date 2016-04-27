@@ -1,22 +1,9 @@
 """Defines functions for the counter-factual regret algorithm
 These functions are for The Resistance"""
-from res_helper_fns import spy_on_mission
 
-#constants for which side we're on
-RES = 0
-SPY = 1
-
-NUM_ROUNDS = 5
-NUM_PLAYERS = 5
-NUM_PASSES = 3
-NUM_FAILS = 3
-THREE_PERSON_ROUNDS = [False, True, False, True, True]
-
-SPY_ALLOCATIONS = [chr(ord('a')+i) for i in range(10)]
-MISSIONS = [chr(ord('A')+i) for i in range(10)]
-MISSION_RESULTS = ["1","0"]
-PASS, FAIL = MISSION_RESULTS
-
+from res_helper_fns import spy_on_mission, get_current_round
+from res_constants import *
+import random
 
 def terminal(history):
     """Returns true if the game can be evaluated at this node"""
@@ -60,18 +47,19 @@ def get_information_sets():
     """Returns all possible information sets
     Used for settuping up variables"""
     all_histories = set()
-    last_round_histories = set("")
+    last_round_histories = set(SPY_ALLOCATIONS)
+    all_histories = all_histories | last_round_histories
     this_round_histories = set()
     while last_round_histories:
         for h in last_round_histories:
             for a in get_available_actions(get_information_set(h)):
-                if !terminal(h+a):
+                if not terminal(h+a):
                     this_round_histories.add(h+a)
-        all_histories = all_histores| this_round_histories
+        all_histories = all_histories | this_round_histories
         last_round_histories = this_round_histories
         this_round_histories = set()
     all_info_sets = set()
-    for h in all_histores:
+    for h in all_histories:
         all_info_sets.add(get_information_set(h))
     return all_info_sets
 
@@ -80,7 +68,7 @@ def get_next_player(history):
     if history[-1] in SPY_ALLOCATIONS or history[-1] in MISSIONS:
         return SPY
     else:
-        assert history[-1] in MISSION_RESULTS:
+        assert history[-1] in MISSION_RESULTS
         return RES
 
 def chance_node(history):
@@ -94,7 +82,11 @@ def evaluate_chance_node(history):
 #TODO: this should probably be memoized, unless it takes too much space, in which case
 # we should probably optimize it somehow
 def get_available_actions(I):
-    """Returns the set of all actions which can be taken out of I"""
+    """Returns the set of all actions which can be taken out of I
+    In the resistance case, it just returns all missions as feasible
+    In the spy case, it checks to see if the spies even have the ability to fail
+    It also checks if failing would result in an instant win or if passing would result
+    in an instant loss"""
     if terminal(I):
         return []
     # if it's a spy strategy
@@ -115,7 +107,7 @@ def get_available_actions(I):
         if spy_on_mission(mission, alloc, THREE_PERSON_ROUNDS[current_round]):
             return MISSION_RESULTS
         else:
-            return [TRUE]
+            return [PASS]
     else:
         # we just treat all missions as viable
         return MISSIONS
