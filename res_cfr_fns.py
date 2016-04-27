@@ -1,82 +1,95 @@
 """Defines functions for the counter-factual regret algorithm
 These functions are for The Resistance"""
+from res_helper_fns import spy_on_mission
 
 #constants for which side we're on
 RES = 0
 SPY = 1
 
 NUM_ROUNDS = 5
+NUM_PLAYERS = 5
+NUM_PASSES = 3
+NUM_FAILS = 3
+THREE_PERSON_ROUNDS = [False, True, False, True, True]
 
 SPY_ALLOCATIONS = [chr(ord('a')+i) for i in range(10)]
 MISSIONS = [chr(ord('A')+i) for i in range(10)]
 MISSION_RESULTS = ["1","0"]
 PASS, FAIL = MISSION_RESULTS
 
-#---ESSENTIAL FUNCTIONS---
 
 def terminal(history):
     """Returns true if the game can be evaluated at this node"""
     # a state is terminal iff it has three passes/fails or it is after the 4th mission proposed
-    if history.count(PASS) == 3 or history.count(FAIL) == 3:
+    if history.count(PASS) == NUM_PASSES or history.count(FAIL) == NUM_FAILS:
         return True
     # if history is spy alloc + 4 rounds of result/mission, we're also done
-    if len(history) == 1 + 2*4:
+    if len(history) == 1 + 2*(NUM_ROUNDS-1):
         return True
     return False
 
-def get_utility(history):
+def get_utility(history,i):
     """Returns the utility of history
     Can only be called on a terminal node"""
+    # first we check if there have already been 3 passes/fails
+    if history.count(PASS) == NUM_PASSES:
+        return 1 if i == RES else -1
+    elif history.count(FAIL) == NUM_FAILS:
+        return -1 if i == RES else -1
+
+    # if not, we must be in the final state, so we check if there's a spy on the final mission
+    final_mission = history[-1]
+    alloc = history[0]
+    assert final_mission in MISSIONS and alloc in SPY_ALLOCATIONS
+    # last mission is a three-person mission
+    if spy_on_mission(final_mission, alloc, False):
+        return -1 if i == RES else 1
+    else:
+        return 1 if i == RES else -1
 
 def get_information_set(history):
     """Returns the information set for the next player of history"""
-    pass
+    if get_next_player(history) == SPY:
+        # we don't strip anything out here - the spy has total knowledge
+        return history
+    else:
+        # here, we remove the spy allocation
+        return history[1:]
 
 def get_information_sets():
     """Returns all possible information sets
     Used for settuping up variables"""
-    all_info_sets = []
-    #spy ones start with a spy allocation
-    spy_round_zero = SPY_ALLOCATIONS
-    all_info_sets.extend(spy_round_zero)
-    spy_last_round = spy_round_zero
-    for i in range(NUM_ROUNDS-2):
-        spy_round_i = []
-        for m in MISSIONS:
-            for r in MISSION_RESULTS:
-                for i in spy_last_round:
-                    spy_round_i.append(i+r+m)
-        spy_last_round = spy_round_i
-        all_info_sets.extend(spy_round_i)
-    #resistance ones don't have a spy allocation
-    res_round_zero = MISSION_RESULTS
-    all_info_sets.extend(res_round_zero)
-    res_last_round = res_round_zero
-    for i in range(NUM_ROUNDS-1):
-        res_round_i = []
-        for m in MISSIONS:
-            for r in MISSION_RESULTS:
-                for i in res_last_round:
-                    res_round_i.append(i+m+r)
-        res_last_round = res_round_i
-        all_info_sets.extend(res_round_i)
-    """
-    #terminal nodes add one extra mission
-    terminal_missions = []
-    for m in MISSIONS:
-        for i in res_last_round:
-            terminal_missions.append(i+m)
-    all_info_sets.extend(terminal_missions)
-    """
+    all_histories = set()
+    last_round_histories = set("")
+    this_round_histories = set()
+    while last_round_histories:
+        for h in last_round_histories:
+            for a in get_available_actions(get_information_set(h)):
+                if !terminal(h+a):
+                    this_round_histories.add(h+a)
+        all_histories = all_histores| this_round_histories
+        last_round_histories = this_round_histories
+        this_round_histories = set()
+    all_info_sets = set()
+    for h in all_histores:
+        all_info_sets.add(get_information_set(h))
     return all_info_sets
 
 def get_next_player(history):
     """Returns the next player to play (either RES or SPY)"""
-    pass
+    if history[-1] in SPY_ALLOCATIONS or history[-1] in MISSIONS:
+        return SPY
+    else:
+        assert history[-1] in MISSION_RESULTS:
+        return RES
 
 def chance_node(history):
-    """Returns true if history ends in a chance node"""
-    return history==[]
+    """Returns true if history ends in a chance node (in this case, only the first)"""
+    return history == ""
+
+def evaluate_chance_node(history):
+    """Our only chance node is only the first, so we just choose a random spy allocation"""
+    return random.choice(SPY_ALLOCATIONS)
 
 #TODO: this should probably be memoized, unless it takes too much space, in which case
 # we should probably optimize it somehow
@@ -86,10 +99,23 @@ def get_available_actions(I):
         return []
     # if it's a spy strategy
     if I[0] in SPY_ALLOCATIONS:
-        # check to see if a spy is part of the mission
-        pass
         # check to see if passing would cause us to lose (if so, we should always fail)
-        pass
+        # or if failing would cause us to win (if so, we should always fail)
+        if I.count(FAIL) == NUM_FAILS-1 or I.count(PASS) == NUM_PASSES-1:
+            return [FAIL]
+        # check to see if a spy is part of the mission (if not, the only result is pass)
+        current_round = get_current_round(I)
+        if current_round == 0:
+            #first mission proposed is always A
+            mission = MISSIONS[0]
+        else:
+            mission = I[-1]
+        alloc = I[0]
+        assert mission in MISSIONS
+        if spy_on_mission(mission, alloc, THREE_PERSON_ROUNDS[current_round]):
+            return MISSION_RESULTS
+        else:
+            return [TRUE]
     else:
         # we just treat all missions as viable
         return MISSIONS

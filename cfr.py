@@ -1,7 +1,6 @@
 """Implementation of the counter-factual regret algorithm, as described in
 http://modelai.gettysburg.edu/2013/cfr/cfr.pdf"""
 from __future__ import division
-import random
 
 from res_cfr_fns import terminal, get_utility, get_information_set, get_information_sets,\
                            get_next_player, chance_node, get_available_actions 
@@ -22,7 +21,7 @@ def CFR(history, player, time, pi_1, pi_2):
         return get_utility(history)
 
     elif chance_node(history):
-        a = random.choice(SPY_ALLOCATIONS)
+        a = evaluate_chance_node(history)
         return CFR(history+a, player, time, pi_1, pi_2)
 
     I = get_information_set(history)
