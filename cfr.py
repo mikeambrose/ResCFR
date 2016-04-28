@@ -5,6 +5,10 @@ from __future__ import division
 from res_cfr_fns import terminal, get_utility, get_information_set, get_information_sets,\
                            get_next_player, chance_node, get_available_actions, evaluate_chance_node
 
+import time
+import json
+
+
 #map of information set : regret
 regret = {}
 #list of strategy profiles for each time step
@@ -20,6 +24,9 @@ def CFR(history, player, pi_1, pi_2):
     only updating if PLAYER is the next player to play
     where PI_1 and PI_2 are the probabilities of players playing to get to this history
     """
+    #if '0A1' in history:
+    #    print history
+
     if terminal(history):
         return get_utility(history, player)
 
@@ -33,6 +40,9 @@ def CFR(history, player, pi_1, pi_2):
         return overall_val / num_available_actions
 
     I = get_information_set(history)
+    if I == '0A1':
+        #import pdb; pdb.set_trace()
+        pass
     available_actions = get_available_actions(I)
     v_strat = 0
     v_strat_a = {a:0 for a in available_actions}
@@ -76,11 +86,23 @@ def setup_CFR(T):
         strategy[I] = {a:0 for a in available_actions}
         last_profile[I] = {a:1.0/len(available_actions) for a in available_actions}
 
+def write_strategies(T):
+    average = lambda x: sum(x) / len(x)
+    final_profile = {}
+    for I in strategy:
+        sum_I = sum(strategy[I][a] for a in strategy[I])
+        final_profile[I] = {a:strategy[I][a]/sum_I for a in strategy[I]}
+
+    f = open(filename.format(T),'w')
+    s = json.dumps(final_profile)
+    f.write(s)
+    return final_profile
+
+
 if __name__ == "__main__":
-    import time
     start_time = time.time()
-    T = 1
-    filename = "stored_CFR_solution_{0}.txt"
+    T = 10000
+    filename = "stored_CFR_3solution_{0}.txt"
     """Runs CFR for T iterations"""
     setup_CFR(T)
     for t in range(T+1):
@@ -89,15 +111,6 @@ if __name__ == "__main__":
         print "Iteration {0} with value at root {1}".format(t, val_root_node)
         last_profile = current_profile 
         current_profile = {}
-
-    average = lambda x: sum(x) / len(x)
-    final_profile = {}
-    for I in strategy:
-        sum_I = sum(strategy[I][a] for a in strategy[I])
-        final_profile[I] = {a:strategy[I][a]/sum_I for a in strategy[I]}
-
-    f = open(filename.format(T),'w')
-    import json
-    s = json.dumps(final_profile)
-    f.write(s)
+        if t % 1000 == 0:
+            final_profile = write_strategies(t)
     print "Finished running - ran for {0} seconds".format(time.time() - start_time)

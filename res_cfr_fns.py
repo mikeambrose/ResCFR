@@ -25,11 +25,12 @@ def get_utility(history,i):
         return LOSE if i == RES else WIN 
 
     # if not, we must be in the final state, so we check if there's a spy on the final mission
+    current_round = get_current_round(history)
     final_mission = history[-1]
     alloc = history[0]
     assert final_mission in MISSIONS and alloc in SPY_ALLOCATIONS
     assert history.count(PASS) == NUM_PASSES-1 and history.count(FAIL) == NUM_FAILS-1
-    if spy_on_mission(final_mission, alloc, THREE_PERSON_ROUNDS[-1]):
+    if spy_on_mission(final_mission, alloc, THREE_PERSON_ROUNDS[current_round]):
         return LOSE if i == RES else WIN 
     else:
         return WIN if i == RES else LOSE 

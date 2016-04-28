@@ -15,14 +15,20 @@ def evaluate_spy_best_strategy(history, strategy):
     I = get_information_set(history)
     available_actions = get_available_actions(I)
     next_player = get_next_player(history)
-    utility = 0
     if next_player == RES:
+        utility = 0
         for a in available_actions:
             utility += evaluate_spy_best_strategy(history+a, strategy)*strategy[I][a]
     else:
+        utility = None
         for a in available_actions:
             a_utility = evaluate_spy_best_strategy(history+a, strategy)
-            utility = max(utility, a_utility)
+            if utility == None:
+                utility = a_utility
+            else:
+                utility = max(utility, a_utility)
+    if len(history) == 1:
+        print history, utility
     return utility
 
 def evaluate_mixed_strategy(history, strategy):
@@ -45,7 +51,7 @@ def evaluate_mixed_strategy(history, strategy):
 def get_p(utility):
     return (utility+1)*0.5
 
-filename = "stored_CFR_solution_2000.txt"
+filename = "stored_CFR_solution_D200.txt"
 if __name__ == "__main__":
     import json
     json_text = open(filename).read()
