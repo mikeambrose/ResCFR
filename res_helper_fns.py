@@ -5,6 +5,7 @@ letter_to_pos = {}
 for pos,letter in zip(itertools.combinations(range(NUM_PLAYERS),2),MISSIONS):
     letter_to_pos[letter] = set(pos)
 
+#TODO: probably should be memoized
 def spy_on_mission(mission, alloc, three_person_mission):
     """Returns true if spy allocation ALLOC leads to a spy on mission MISSION"""
     mission_people = letter_to_pos[mission]

@@ -45,7 +45,7 @@ def evaluate_mixed_strategy(history, strategy):
 def get_p(utility):
     return (utility+1)*0.5
 
-filename = "stored_CFR_solution_200.txt"
+filename = "stored_CFR_solution_2000.txt"
 if __name__ == "__main__":
     import json
     json_text = open(filename).read()
