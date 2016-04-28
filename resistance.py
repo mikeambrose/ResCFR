@@ -191,6 +191,14 @@ if True:
             table.append(row)
         return table
 
+    def print_wins_table():
+        table = compute_wins_table()
+        for i in range(len(table)):
+            row = table[i]
+            r1_pass_num = int(i / 10)
+            r1_fail_num = i % 10
+            print('p: {} f: {} num_wins: {}'.format(r1_pass_num, r1_fail_num, row))
+
     def compute_win_chance(g_strategy_num, b_strategy_num):
         #print(GStrategy(g_strategy_num).tree)
         #print(b_strategy_num)
@@ -349,14 +357,7 @@ if True:
             b_loc_prob_dict = {}
             for pair in b_loc_set:
                 b_loc_prob_dict[pair] = 1.0 / num_possible_locs
-            return b_loc_prob_dict
-
-    def get_best_r4_r5_strat(num_wins, b_loc_prob_dict):
-        
-
-
-
-        
+            return b_loc_prob_dict        
 
     def get_r4_r5_tree(num_wins, g_strategy_num):
 
@@ -400,5 +401,3 @@ if True:
             return [2,4,5]
         if g_strategy_num == 9:
             return [3,4,5]
-
-    r
