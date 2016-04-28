@@ -20,9 +20,9 @@ def get_utility(history,i):
     Can only be called on a terminal node"""
     # first we check if there have already been 3 passes/fails
     if history.count(PASS) == NUM_PASSES:
-        return 1 if i == RES else -1
+        return WIN if i == RES else LOSE 
     elif history.count(FAIL) == NUM_FAILS:
-        return -1 if i == RES else 1
+        return LOSE if i == RES else WIN 
 
     # if not, we must be in the final state, so we check if there's a spy on the final mission
     final_mission = history[-1]
@@ -30,9 +30,9 @@ def get_utility(history,i):
     assert final_mission in MISSIONS and alloc in SPY_ALLOCATIONS
     assert history.count(PASS) == NUM_PASSES-1 and history.count(FAIL) == NUM_FAILS-1
     if spy_on_mission(final_mission, alloc, THREE_PERSON_ROUNDS[-1]):
-        return -1 if i == RES else 1
+        return LOSE if i == RES else WIN 
     else:
-        return 1 if i == RES else -1
+        return WIN if i == RES else LOSE 
 
 def get_information_set(history):
     """Returns the information set for the next player of history"""

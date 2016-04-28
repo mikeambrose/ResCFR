@@ -12,3 +12,6 @@ SPY_ALLOCATIONS = [chr(ord('a')+i) for i in range(10)]
 MISSIONS = [chr(ord('A')+i) for i in range(10)]
 MISSION_RESULTS = ["1","0"]
 PASS, FAIL = MISSION_RESULTS
+
+WIN = 1
+LOSE = -1
