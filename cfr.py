@@ -8,7 +8,9 @@ from res_cfr_fns import terminal, get_utility, get_information_set, get_informat
 #map of information set : regret
 regret = {}
 #list of strategy profiles for each time step
-profiles = []
+last_profile = {}
+current_profile = {}
+strategy = {}
 #all spy allocations
 P1 = 0
 P2 = 1
@@ -22,6 +24,7 @@ def CFR(history, player, time, pi_1, pi_2):
     if terminal(history):
         return get_utility(history, player)
 
+    #this only works with uniform chance nodes - otherwise, this section will need to be reconsidered
     elif chance_node(history):
         #this may be the wrong thing to do
         overall_val = 0
@@ -43,10 +46,10 @@ def CFR(history, player, time, pi_1, pi_2):
 
     for a in available_actions:
         if next_player == P1:
-            v_strat_a[a] = CFR(history+a, player, time, profiles[time][I][a]*pi_1, pi_2)
+            v_strat_a[a] = CFR(history+a, player, time, last_profile[I][a]*pi_1, pi_2)
         else:
-            v_strat_a[a] = CFR(history+a, player, time, pi_1, profiles[time][I][a]*pi_2)
-        v_strat = v_strat+profiles[time][I][a]*v_strat_a[a]
+            v_strat_a[a] = CFR(history+a, player, time, pi_1, last_profile[I][a]*pi_2)
+        v_strat = v_strat+last_profile[I][a]*v_strat_a[a]
 
     if next_player == player:
         for a in available_actions:
@@ -55,8 +58,8 @@ def CFR(history, player, time, pi_1, pi_2):
             else:
                 pi_excl_i, pi_i = pi_1, pi_2
             regret[I][a] = regret[I][a] + pi_excl_i*(v_strat_a[a]-v_strat)
-            #cumulative strategy tables?
-        profiles[time+1][I] = update_profile(I)
+            strategy[I][a] = strategy[I][a] + pi_i*last_profile[I][a]
+        current_profile[I] = update_profile(I)
 
     return v_strat
 
@@ -73,34 +76,33 @@ def update_profile(I):
 def setup_CFR(T):
     """Initializes global variables"""
     I_s = get_information_sets()
-    for t in range(T+1):
-        profiles.append({})
-    first_round_strategy = {}
     for I in I_s:
         available_actions = get_available_actions(I)
         regret[I] = {a:0 for a in available_actions}
-        profiles[0][I] = {a:1.0/len(available_actions) for a in available_actions}
-    profiles.append(first_round_strategy)
+        strategy[I] = {a:0 for a in available_actions}
+        last_profile[I] = {a:1.0/len(available_actions) for a in available_actions}
 
-def solve_CFR(T):
-    """Runs CFR for T iterations"""
-    setup_CFR(T)
-    for t in range(T+1):
-        for i in [P1, P2]:
-            val_root_node = CFR("",i,t,1,1)
-        print "Iteration {0} with value at root {1}".format(t, val_root_node)
-    average = lambda x: sum(x) / len(x)
-    final_profile = {}
-    for I in profiles[1]:
-        final_profile[I] = {}
-        for a in profiles[1][I]:
-            final_profile[I][a] = average([profiles[t][I][a] for t in range(T)])
-    return final_profile
-
-T = 40
+import time
+start_time = time.time()
+T = 2000
 filename = "stored_CFR_solution_{0}.txt"
-final_profile = solve_CFR(T)
+"""Runs CFR for T iterations"""
+setup_CFR(T)
+for t in range(T+1):
+    for i in [P1, P2]:
+        val_root_node = CFR("",i,t,1,1)
+    print "Iteration {0} with value at root {1}".format(t, val_root_node)
+    last_profile = current_profile 
+    current_profile = {}
+
+average = lambda x: sum(x) / len(x)
+final_profile = {}
+for I in strategy:
+    sum_I = sum(strategy[I][a] for a in strategy[I])
+    final_profile[I] = {a:strategy[I][a]/sum_I for a in strategy[I]}
+
 f = open(filename.format(T),'w')
 import json
 s = json.dumps(final_profile)
 f.write(s)
+print "Finished running - ran for {0} seconds".format(time.time() - start_time)

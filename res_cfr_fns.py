@@ -22,14 +22,14 @@ def get_utility(history,i):
     if history.count(PASS) == NUM_PASSES:
         return 1 if i == RES else -1
     elif history.count(FAIL) == NUM_FAILS:
-        return -1 if i == RES else -1
+        return -1 if i == RES else 1
 
     # if not, we must be in the final state, so we check if there's a spy on the final mission
     final_mission = history[-1]
     alloc = history[0]
     assert final_mission in MISSIONS and alloc in SPY_ALLOCATIONS
-    # last mission is a three-person mission
-    if spy_on_mission(final_mission, alloc, False):
+    assert history.count(PASS) == NUM_PASSES-1 and history.count(FAIL) == NUM_FAILS-1
+    if spy_on_mission(final_mission, alloc, THREE_PERSON_ROUNDS[-1]):
         return -1 if i == RES else 1
     else:
         return 1 if i == RES else -1
@@ -79,8 +79,6 @@ def evaluate_chance_node(history):
     """Our only chance node is only the first, so we just choose a random spy allocation"""
     return random.choice(SPY_ALLOCATIONS)
 
-#TODO: this should probably be memoized, unless it takes too much space, in which case
-# we should probably optimize it somehow
 def get_available_actions(I):
     """Returns the set of all actions which can be taken out of I
     In the resistance case, it just returns all missions as feasible
