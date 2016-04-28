@@ -3,6 +3,9 @@ from res_cfr_fns import terminal, chance_node, get_information_set, get_availabl
                         get_next_player, get_utility
 from res_constants import *
 
+import json
+import argparse
+
 def evaluate_spy_best_strategy(history, strategy):
     if terminal(history):
         return get_utility(history, SPY)
@@ -49,13 +52,23 @@ def evaluate_mixed_strategy(history, strategy):
     return utility
 
 def get_p(utility):
+    """Formats a utility as a probability of winning"""
     return (utility+1)*0.5
 
 filename = "stored_CFR_solution_D200.txt"
 if __name__ == "__main__":
-    import json
-    json_text = open(filename).read()
+    parser = argparse.ArgumentParser(description='Evaluate the effectiveness of a strategy')
+    
+    parser.add_argument('filename', help='the input file')
+
+    args = parser.parse_args()
+    
+
+    json_text = open(args.filename).read()
     strategy = json.loads(json_text)
+    for I in strategy:
+        for a in strategy[I]:
+            strategy[I][a] = float(strategy[I][a])
     best_response = evaluate_spy_best_strategy("", strategy)
     print "Spies best response wins with probability {0}".format(get_p(best_response))
     av_response = evaluate_mixed_strategy("", strategy)

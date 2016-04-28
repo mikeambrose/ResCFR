@@ -7,6 +7,8 @@ from res_cfr_fns import terminal, get_utility, get_information_set, get_informat
 
 import time
 import json
+from decimal import *
+import argparse
 
 
 #map of information set : regret
@@ -18,6 +20,14 @@ strategy = {}
 #all spy allocations
 P1 = 0
 P2 = 1
+#whether or not to use Decimal
+DECIMAL_ZERO = Decimal(0)
+DECIMAL_ONE = Decimal(1)
+FLOAT_ZERO = 0
+FLOAT_ONE = 1
+use_decimal = False
+zero = FLOAT_ZERO
+one = FLOAT_ONE
 
 def CFR(history, player, pi_1, pi_2):
     """Runs CFR on a node with history HISTORY
@@ -33,7 +43,7 @@ def CFR(history, player, pi_1, pi_2):
     #this only works with uniform chance nodes - otherwise, this section will need to be reconsidered
     elif chance_node(history):
         #this may be the wrong thing to do
-        overall_val = 0
+        overall_val = zero
         num_available_actions = len(get_available_actions(history))
         for a in get_available_actions(history):
             overall_val += CFR(history+a, player, pi_1, pi_2)
@@ -44,8 +54,8 @@ def CFR(history, player, pi_1, pi_2):
         #import pdb; pdb.set_trace()
         pass
     available_actions = get_available_actions(I)
-    v_strat = 0
-    v_strat_a = {a:0 for a in available_actions}
+    v_strat = zero
+    v_strat_a = {a:zero for a in available_actions}
     next_player = get_next_player(history)
 
     for a in available_actions:
@@ -70,11 +80,11 @@ def CFR(history, player, pi_1, pi_2):
 def update_profile(I):
     """Finds new strategy profile based on global regrets and information set I"""
     available_actions = get_available_actions(I)
-    sum_pcfr = sum(max(regret[I][a],0) for a in available_actions)
+    sum_pcfr = sum(max(regret[I][a],zero) for a in available_actions)
     if sum_pcfr <= 0:
-        new_I_profile = {a:1.0/len(available_actions) for a in available_actions}
+        new_I_profile = {a:one/len(available_actions) for a in available_actions}
     else:
-        new_I_profile = {a:max((regret[I][a]/sum_pcfr),0) for a in available_actions}
+        new_I_profile = {a:max((regret[I][a]/sum_pcfr), zero) for a in available_actions}
     return new_I_profile
 
 def setup_CFR(T):
@@ -82,35 +92,75 @@ def setup_CFR(T):
     I_s = get_information_sets()
     for I in I_s:
         available_actions = get_available_actions(I)
-        regret[I] = {a:0 for a in available_actions}
-        strategy[I] = {a:0 for a in available_actions}
-        last_profile[I] = {a:1.0/len(available_actions) for a in available_actions}
+        regret[I] = {a:zero for a in available_actions}
+        strategy[I] = {a:zero for a in available_actions}
+        last_profile[I] = {a:one/len(available_actions) for a in available_actions}
 
-def write_strategies(T):
+
+
+def write_strategies(T, filename, output_figures = 10):
     average = lambda x: sum(x) / len(x)
     final_profile = {}
     for I in strategy:
         sum_I = sum(strategy[I][a] for a in strategy[I])
-        final_profile[I] = {a:strategy[I][a]/sum_I for a in strategy[I]}
+        if use_decimal:
+            final_profile[I] = {a:str((strategy[I][a]/sum_I)
+                                .quantize(Decimal('.'+'0'*output_figures+'1')))
+                                for a in strategy[I]}
+        else:
+            final_profile[I] = {a:strategy[I][a]/sum_I for a in strategy[I]}
 
-    f = open(filename.format(T),'w')
+    out_filename  = filename.format(T) if '{0}' in filename else filename
+    f = open(out_filename, 'w')
     s = json.dumps(final_profile)
     f.write(s)
     return final_profile
 
 
 if __name__ == "__main__":
+    # argument handling
+    parser = argparse.ArgumentParser(description='Solve Resistance using CFR')
+    
+    parser.add_argument('-T', dest='T', type=int, help='the number of rounds to run', required=True)
+    parser.add_argument('-o', dest='out_file', help='output file', required=True)
+    parser.add_argument('-D', dest='use_decimal', action='store_const', const=True, default=False,
+                        help='whether or not to use python arbitrary-precision decimals')
+    parser.add_argument('-p', dest='precision', type=int,
+                        help='level of precision (only used with -D flag)', default=32)
+    parser.add_argument('-op', dest='output_precision', type=int,
+                        help='level of precision of output (only used with -D flag', default=16)
+    parser.add_argument('-u', dest='update', action='store_const', const=True, default=False, 
+                        help='write to file periodically (include {0} in your file if you choose this')
+    parser.add_argument('-up', dest='update_period', type=int, default=1000,
+                        help='how frequently to write to file (used with -u)')
+
+    args = parser.parse_args()
+
+    #globally set whether or not we're using decimal
+    use_decimal = args.use_decimal
+    zero = DECIMAL_ZERO if use_decimal else FLOAT_ZERO
+    one = DECIMAL_ONE if use_decimal else FLOAT_ONE
+
+    output_precision = min(args.output_precision, args.precision-2)
+
+    if '{0}' not in args.out_file and args.update:
+        print "A formatting location must be included in the output file"
+    getcontext().prec = args.precision
+
     start_time = time.time()
-    T = 10000
-    filename = "stored_CFR_3solution_{0}.txt"
-    """Runs CFR for T iterations"""
-    setup_CFR(T)
-    for t in range(T+1):
+
+    setup_CFR(args.T)
+    for t in range(args.T+1):
+        iter_time = time.time()
         for i in [P1, P2]:
-            val_root_node = CFR("",i,1,1)
-        print "Iteration {0} with value at root {1}".format(t, val_root_node)
+            start_prob = DECIMAL_ONE if args.use_decimal else FLOAT_ONE
+            val_root_node = CFR("",i,start_prob, start_prob)
+        print "Iteration {0} with value at root {1} - took {2} seconds".format(t, val_root_node,
+                                                                       time.time()-iter_time)
         last_profile = current_profile 
         current_profile = {}
-        if t % 1000 == 0:
-            final_profile = write_strategies(t)
+        if t % args.update_period == 0 and args.update and t != 0:
+            final_profile = write_strategies(t, args.out_file, output_precision)
+    write_strategies(args.T, args.out_file, output_precision)
     print "Finished running - ran for {0} seconds".format(time.time() - start_time)
+
