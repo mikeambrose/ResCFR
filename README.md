@@ -6,17 +6,17 @@ In order to use it on your game, you shouldn't need to modify `cfr.py`. Instead,
 Histories are represented as strings where each character is a state. The following functions need to be implemented:
 
 * `terminal(history)`
-  * boolean function for whether or not *history* represents a final state of the game
+  * boolean function for whether or not `history` represents a final state of the game
 * `get_utility(history, i)`
-  * returns the utility for player *i* at terminal state *history*
+  * returns the utility for player `i` at terminal state `history`
 * `get_information_set(history, i)`
-  * returns the information set from the perspective of player *i* of *history*
+  * returns the information set from the perspective of player `i` of `history`
 * `get_information_sets()`
   * returns all information sets (used for initialization only - the implementation in `res_cfr_fns.py` will likely work for you with some tweaking)
 * `get_next_player(history)`
-  * returns the next player to play after *history* has occurred
+  * returns the next player to play after `history` has occurred
 * `chance_node(history)`
-  * boolean function for whether or not *history* represents a chance node
+  * boolean function for whether or not `history` represents a chance node
 * `get_available_actions(I)`
   * returns the available actions given information set `I`
 
