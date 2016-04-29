@@ -34,15 +34,11 @@ def CFR(history, player, pi_1, pi_2):
     only updating if PLAYER is the next player to play
     where PI_1 and PI_2 are the probabilities of players playing to get to this history
     """
-    #if '0A1' in history:
-    #    print history
-
     if terminal(history):
         return get_utility(history, player)
 
     #this only works with uniform chance nodes - otherwise, this section will need to be reconsidered
     elif chance_node(history):
-        #this may be the wrong thing to do
         overall_val = zero
         num_available_actions = len(get_available_actions(history))
         for a in get_available_actions(history):
@@ -50,9 +46,6 @@ def CFR(history, player, pi_1, pi_2):
         return overall_val / num_available_actions
 
     I = get_information_set(history)
-    if I == '0A1':
-        #import pdb; pdb.set_trace()
-        pass
     available_actions = get_available_actions(I)
     v_strat = zero
     v_strat_a = {a:zero for a in available_actions}
@@ -155,8 +148,8 @@ if __name__ == "__main__":
         for i in [P1, P2]:
             start_prob = DECIMAL_ONE if args.use_decimal else FLOAT_ONE
             val_root_node = CFR("",i,start_prob, start_prob)
-        print "Iteration {0} with value at root {1} - took {2} seconds".format(t, val_root_node,
-                                                                       time.time()-iter_time)
+        print "Iteration {0}/{3} with value at root {1} - took {2} seconds".format(t, val_root_node,
+                                                                       time.time()-iter_time, args.T)
         last_profile = current_profile 
         current_profile = {}
         if t % args.update_period == 0 and args.update and t != 0:

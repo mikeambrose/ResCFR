@@ -6,6 +6,8 @@ from res_constants import *
 import json
 import argparse
 
+utilities = {}
+
 def evaluate_spy_best_strategy(history, strategy):
     if terminal(history):
         return get_utility(history, SPY)
@@ -31,7 +33,8 @@ def evaluate_spy_best_strategy(history, strategy):
             else:
                 utility = max(utility, a_utility)
     if len(history) == 1:
-        print history, utility
+        print history, get_p(utility)
+    utilities[history] = utility
     return utility
 
 def evaluate_mixed_strategy(history, strategy):
@@ -49,13 +52,15 @@ def evaluate_mixed_strategy(history, strategy):
     utility = 0
     for a in available_actions:
         utility += evaluate_mixed_strategy(history+a, strategy)*strategy[I][a]
+    if len(history) == 1:
+        print history, get_p(utility)
+
     return utility
 
 def get_p(utility):
     """Formats a utility as a probability of winning"""
     return (utility+1)*0.5
 
-filename = "stored_CFR_solution_D200.txt"
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Evaluate the effectiveness of a strategy')
     
@@ -70,6 +75,7 @@ if __name__ == "__main__":
         for a in strategy[I]:
             strategy[I][a] = float(strategy[I][a])
     best_response = evaluate_spy_best_strategy("", strategy)
+    import pdb; pdb.set_trace()
     print "Spies best response wins with probability {0}".format(get_p(best_response))
     av_response = evaluate_mixed_strategy("", strategy)
     print "If both parties play the mixed response, spies win with probability {0}".format(get_p(av_response))
