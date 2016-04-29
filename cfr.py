@@ -3,7 +3,7 @@ http://modelai.gettysburg.edu/2013/cfr/cfr.pdf"""
 from __future__ import division
 
 from res_cfr_fns import terminal, get_utility, get_information_set, get_information_sets,\
-                           get_next_player, chance_node, get_available_actions, evaluate_chance_node
+                           get_next_player, chance_node, get_available_actions
 
 import time
 import json

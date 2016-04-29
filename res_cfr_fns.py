@@ -3,7 +3,6 @@ These functions are for The Resistance"""
 
 from res_helper_fns import spy_on_mission, get_current_round
 from res_constants import *
-import random
 
 def terminal(history):
     """Returns true if the game can be evaluated at this node"""
@@ -75,10 +74,6 @@ def get_next_player(history):
 def chance_node(history):
     """Returns true if history ends in a chance node (in this case, only the first)"""
     return history == ""
-
-def evaluate_chance_node(history):
-    """Our only chance node is only the first, so we just choose a random spy allocation"""
-    return random.choice(SPY_ALLOCATIONS)
 
 def get_available_actions(I):
     """Returns the set of all actions which can be taken out of I
